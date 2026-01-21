@@ -1,0 +1,42 @@
+{
+  "analysis_id": "7fdcee95-3d89-4cc5-8ec5-baf948366b92",
+  "transcript_id": "f4303c6e-3378-4bd3-9ed8-00f3bcd5a941",
+  "creator_id": "0296969b-c751-4c02-87ea-633a609f6641",
+  "entities": {
+    "people": [
+      "Tim Ferriss"
+    ],
+    "tools": [
+      "Notion"
+    ],
+    "brands": [],
+    "products": [
+      "The 4-Hour Workweek"
+    ],
+    "organizations": []
+  },
+  "tone": {
+    "primary": "Informative",
+    "secondary": [
+      "Conversational",
+      "Analytical"
+    ],
+    "confidence": 0.9
+  },
+  "style": {
+    "primary": "Interview Summary",
+    "confidence": 0.9
+  },
+  "safety_flags": {
+    "sensitive_domains": [
+      "medical",
+      "controversial"
+    ],
+    "severity": "low",
+    "requires_review": false
+  },
+  "created_at": "2026-01-21T06:44:39.411963Z",
+  "meta": {
+    "transcript_word_count": 37
+  }
+}

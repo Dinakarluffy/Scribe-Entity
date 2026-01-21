@@ -1,0 +1,38 @@
+{
+  "analysis_id": "d7b765c3-c55f-475b-9f83-361ea42807f0",
+  "transcript_id": "356c9d26-4e55-4376-ac9a-d1ffc2619619",
+  "creator_id": "50a825f0-f3e0-4af0-bf63-d9070e172d31",
+  "entities": {
+    "people": [
+      "Tim Ferris"
+    ],
+    "tools": [
+      "notion",
+      "productivity tools"
+    ],
+    "brands": [],
+    "products": [
+      "The Four Hour Workweek"
+    ],
+    "organizations": []
+  },
+  "tone": {
+    "primary": "informative",
+    "secondary": [
+      "discussive",
+      "analytical"
+    ],
+    "confidence": 0.9
+  },
+  "style": {
+    "primary": "interview",
+    "confidence": 1.0
+  },
+  "safety_flags": {
+    "sensitive_domains": [],
+    "severity": "",
+    "requires_review": false
+  },
+  "created_at": "2026-01-21T10:15:13.947432Z",
+  "status": "success"
+}

@@ -4,21 +4,26 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-
 	"your_project/handlers"
 	"your_project/middleware"
 )
 
 func RegisterRoutes() *mux.Router {
 	r := mux.NewRouter()
-	r.Use(middleware.CORS) 
-	r.Use(middleware.Logger)
-	
 
-	// Analyze transcript
+	r.Use(middleware.CORS)
+	r.Use(middleware.Logger)
+
+	// Analyze transcript (JSON input)
 	r.HandleFunc(
 		"/api/entity-classification/analyze",
 		handlers.AnalyzeHandler,
+	).Methods(http.MethodPost)
+
+	// Upload file → Python worker
+	r.HandleFunc(
+		"/api/entity-classification/upload",
+		handlers.UploadAndProcessFile,
 	).Methods(http.MethodPost)
 
 	// Get analysis by ID
@@ -27,7 +32,7 @@ func RegisterRoutes() *mux.Router {
 		handlers.GetResultHandler,
 	).Methods(http.MethodGet)
 
-	// List all results (optional but correct)
+	// List all results
 	r.HandleFunc(
 		"/api/entity-classification/results",
 		handlers.ListResultsHandler,

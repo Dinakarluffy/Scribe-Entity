@@ -1,14 +1,18 @@
 package handlers
 
 import (
+	"bytes"
 	"encoding/json"
+	"io"
+	"log"
 	"net/http"
-	"time"
+	"os"
+	"os/exec"
+	"path/filepath"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 
-	"your_project/models"
 	"your_project/repository"
 )
 
@@ -18,9 +22,25 @@ type AnalyzeRequest struct {
 	CreatorID      string `json:"creator_id"`
 }
 
-// POST /analyze
+type PythonWorkerResponse struct {
+	AnalysisID   string                 `json:"analysis_id"`
+	TranscriptID string                 `json:"transcript_id"`
+	CreatorID    string                 `json:"creator_id"`
+	Entities     map[string]interface{} `json:"entities"`
+	Tone         map[string]interface{} `json:"tone"`
+	Style        map[string]interface{} `json:"style"`
+	SafetyFlags  map[string]interface{} `json:"safety_flags"`
+	CreatedAt    string                 `json:"created_at"`
+	Error        string                 `json:"error,omitempty"`
+	Status       string                 `json:"status,omitempty"`
+}
+
+//
+// -------------------------
+// POST /api/entity-classification/analyze
+// (JSON transcript – unchanged)
+// -------------------------
 func AnalyzeHandler(w http.ResponseWriter, r *http.Request) {
-	// Limit body size to 1MB
 	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
 
 	var req AnalyzeRequest
@@ -29,7 +49,6 @@ func AnalyzeHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Required field validation
 	if req.TranscriptID == "" || req.TranscriptText == "" || req.CreatorID == "" {
 		http.Error(w, "transcript_id, transcript_text and creator_id are required", http.StatusBadRequest)
 		return
@@ -37,88 +56,170 @@ func AnalyzeHandler(w http.ResponseWriter, r *http.Request) {
 
 	analysisID := uuid.New().String()
 
-	// ---- MOCK DATA (Replace with Python Worker later) ----
-	entities := map[string]interface{}{
-		"people":    []string{"Tim Ferriss"},
-		"tools":     []string{"Notion"},
-		"brands":    []string{},
-		"products":  []string{"The 4-Hour Workweek"},
-		"companies": []string{},
+	tempDir := "./tmp/transcripts"
+	_ = os.MkdirAll(tempDir, 0755)
+
+	tempFile := filepath.Join(tempDir, analysisID+".txt")
+	if err := os.WriteFile(tempFile, []byte(req.TranscriptText), 0644); err != nil {
+		http.Error(w, "Failed to create temporary file", http.StatusInternalServerError)
+		return
+	}
+	defer os.Remove(tempFile)
+
+	pythonScript := os.Getenv("PYTHON_WORKER_PATH")
+	pythonExec := os.Getenv("PYTHON_EXEC")
+	if pythonExec == "" {
+		pythonExec = "python"
 	}
 
-	tone := map[string]interface{}{
-		"primary":    "conversational",
-		"secondary":  "educational",
-		"confidence": 0.88,
+	cmd := exec.Command(
+		pythonExec,
+		pythonScript,
+		"--file", tempFile,
+		"--analysis-id", analysisID,
+		"--transcript-id", req.TranscriptID,
+		"--creator-id", req.CreatorID,
+	)
+
+	cmd.Env = os.Environ()
+	output, err := cmd.CombinedOutput()
+
+	if err != nil {
+		http.Error(w, "Python worker failed:\n"+string(output), http.StatusInternalServerError)
+		return
 	}
 
-	style := map[string]interface{}{
-		"primary":    "interview",
-		"confidence": 0.92,
-	}
-
-	safety := map[string]interface{}{
-		"sensitive_domains": []string{"mental health"},
-		"severity":          "low",
-		"requires_review":   false,
-	}
-	// -----------------------------------------------------
-
-	record := &models.EntityClassification{
-		AnalysisID:   analysisID,
-		TranscriptID: req.TranscriptID,
-		CreatorID:    req.CreatorID,
-		Entities:     entities,
-		Tone:         tone,
-		Style:        style,
-		SafetyFlags:  safety,
-		CreatedAt:    time.Now(),
-	}
-
-	if err := repository.InsertAnalysis(record); err != nil {
-		http.Error(w, "Failed to save analysis", http.StatusInternalServerError)
+	var pythonResp PythonWorkerResponse
+	if err := json.Unmarshal(output, &pythonResp); err != nil {
+		http.Error(w, "Invalid Python worker response", http.StatusInternalServerError)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"status":       "success",
-		"analysis_id":  analysisID,
-		"entities":     entities,
-		"tone":         tone,
-		"style":        style,
-		"safety_flags": safety,
+		"analysis_id":  pythonResp.AnalysisID,
+		"entities":     pythonResp.Entities,
+		"tone":         pythonResp.Tone,
+		"style":        pythonResp.Style,
+		"safety_flags": pythonResp.SafetyFlags,
 	})
 }
 
-// GET /results/{analysis_id}
-func GetResultHandler(w http.ResponseWriter, r *http.Request) {
-	analysisID := mux.Vars(r)["analysis_id"]
-	if analysisID == "" {
-		http.Error(w, "analysis_id is required", http.StatusBadRequest)
+//
+// -------------------------
+// POST /api/entity-classification/upload
+// (FILE upload – FIXED)
+// -------------------------
+func UploadAndProcessFile(w http.ResponseWriter, r *http.Request) {
+
+	log.Println("Upload request received")
+
+	r.Body = http.MaxBytesReader(w, r.Body, 500<<20)
+	if err := r.ParseMultipartForm(500 << 20); err != nil {
+		http.Error(w, "invalid multipart form", http.StatusBadRequest)
 		return
 	}
 
+	file, header, err := r.FormFile("file")
+	if err != nil {
+		http.Error(w, "file is required", http.StatusBadRequest)
+		return
+	}
+	defer file.Close()
+
+	tempDir := "./tmp/uploads"
+	_ = os.MkdirAll(tempDir, 0755)
+
+	analysisID := uuid.New().String() // 🔑 SINGLE SOURCE OF TRUTH
+	ext := filepath.Ext(header.Filename)
+	filePath := filepath.Join(tempDir, analysisID+ext)
+
+	out, err := os.Create(filePath)
+	if err != nil {
+		http.Error(w, "failed to save file", http.StatusInternalServerError)
+		return
+	}
+
+	if _, err := io.Copy(out, file); err != nil {
+		out.Close()
+		os.Remove(filePath)
+		http.Error(w, "failed to write file", http.StatusInternalServerError)
+		return
+	}
+	out.Close()
+
+	pythonScript := os.Getenv("PYTHON_WORKER_PATH")
+	if pythonScript == "" {
+		os.Remove(filePath)
+		http.Error(w, "PYTHON_WORKER_PATH env variable not set", http.StatusInternalServerError)
+		return
+	}
+
+	pythonExec := os.Getenv("PYTHON_EXEC")
+	if pythonExec == "" {
+		pythonExec = "python"
+	}
+
+	cmd := exec.Command(
+		pythonExec,
+		pythonScript,
+		"--file", filePath,
+		"--analysis-id", analysisID,
+	)
+
+	cmd.Env = os.Environ()
+
+	output, err := cmd.CombinedOutput()
+	_ = os.Remove(filePath)
+
+	if err != nil {
+		http.Error(w, "Python worker failed:\n"+string(output), http.StatusInternalServerError)
+		return
+	}
+
+	// 🔒 Extract JSON only
+	start := bytes.IndexByte(output, '{')
+	end := bytes.LastIndexByte(output, '}')
+	if start == -1 || end == -1 || end < start {
+		http.Error(w, "Invalid Python worker response", http.StatusInternalServerError)
+		return
+	}
+
+	var pythonResp PythonWorkerResponse
+	if err := json.Unmarshal(output[start:end+1], &pythonResp); err != nil {
+		http.Error(w, "Invalid Python worker response", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"status": "success",
+		"result": pythonResp,
+	})
+}
+
+//
+// -------------------------
+// GET handlers
+// -------------------------
+func GetResultHandler(w http.ResponseWriter, r *http.Request) {
+	analysisID := mux.Vars(r)["analysis_id"]
 	result, err := repository.GetAnalysisByID(analysisID)
 	if err != nil {
 		http.Error(w, "Analysis not found", http.StatusNotFound)
 		return
 	}
-
-	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(result)
 }
 
-// GET /results
 func ListResultsHandler(w http.ResponseWriter, r *http.Request) {
 	results, err := repository.GetAllAnalyses()
 	if err != nil {
 		http.Error(w, "Failed to fetch results", http.StatusInternalServerError)
 		return
 	}
-
-	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(results)
 }
