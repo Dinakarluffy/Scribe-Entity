@@ -1,0 +1,33 @@
+{
+  "analysis_id": "f5981145-3437-4aed-82f2-e9b48bcbf208",
+  "transcript_id": "a97250d0-06a4-4376-86d5-0254c1d39974",
+  "creator_id": "dd6098bc-5d52-45c5-93cc-d72d4e03d43d",
+  "entities": {
+    "people": [],
+    "tools": [],
+    "brands": [],
+    "products": [],
+    "organizations": [
+      "Apple",
+      "Microsoft"
+    ]
+  },
+  "tone": {
+    "primary": "educational",
+    "secondary": [
+      "neutral"
+    ],
+    "confidence": 0.95
+  },
+  "style": {
+    "primary": "opinion",
+    "confidence": 0.9
+  },
+  "safety_flags": {
+    "sensitive_domains": [],
+    "severity": "",
+    "requires_review": false
+  },
+  "created_at": "2026-01-26T07:26:40.323720Z",
+  "status": "success"
+}

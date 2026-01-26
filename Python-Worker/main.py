@@ -150,28 +150,85 @@ def extract_transcript(path: str) -> str:
 # -------------------------------------------------
 def build_prompt(transcript: str) -> str:
     return f"""
-Return STRICT JSON ONLY.
+You are an information extraction and classification model.  Your job is to read the provided Transcript and return STRICT JSON ONLY that exactly matches the schema shown below.  Do NOT return any prose, analysis, or extra keys.  If a value is unknown or not present, return an empty array or an empty string as shown.
 
+OUTPUT SCHEMA (MUST MATCH EXACTLY):
 {{
   "entities": {{
-    "people": [],
-    "tools": [],
+    "people": [],           # list of person names (strings), canonicalized (e.g., "Tim Ferriss")
+    "tools": [],            # software/tools (strings), canonicalized (e.g., "Notion")
+    "brands": [],           # brands (strings)
+    "products": [],         # product or book titles (strings)
+    "organizations": []     # company / org names (strings)
+  }},
+  "tone": {{
+    "primary": "",          # one primary tone keyword
+    "secondary": [],        # list of zero or more secondary tone keywords
+    "confidence": 0.0       # confidence for the primary tone (0.0 - 1.0)
+  }},
+  "style": {{
+    "primary": "",          # one primary style keyword
+    "confidence": 0.0       # confidence for the primary style (0.0 - 1.0)
+  }},
+  "safety_flags": {{
+    "sensitive_domains": [],# list of sensitive domains present (strings, e.g., "mental health")
+    "severity": "",         # one of: "none", "low", "medium", "high"
+    "requires_review": false# boolean: true if a human review is recommended
+  }}
+}}
+
+STRICT RULES:
+1. Return exactly one top-level JSON object matching the schema above. No extra fields, no surrounding text, no markdown.
+2. All confidences must be floats between 0.0 and 1.0 inclusive.
+3. If no entities of a given category are present, return an empty array (not null).
+4. Normalize entity strings (trim whitespace, use commonly-used name forms). Avoid duplicates.
+5. Entities should be simple strings (not nested objects).
+6. Compute `requires_review = true` if any of:
+   - severity == "high",
+   - content includes medical/health advice that could cause harm,
+   - financial/legal instructions with potential high impact,
+   - political content that is persuasive or targeted.
+7. Severity mapping guidance:
+   - "none" = no sensitive content
+   - "low" = mentions sensitive topic but non-actionable (e.g., "mental health" as a general topic)
+   - "medium" = contains actionable advice in a sensitive domain
+   - "high" = urgent risk, disinformation, explicit medical/financial advice that could harm
+8. Tone taxonomy (choose from or map to these): educational, motivational, storytelling, conversational, professional, casual, inspirational, critical, persuasive, neutral.
+9. Style taxonomy (choose or map to these): tutorial, interview, monologue, q&a, review, opinion, case-study, behind-the-scenes.
+10. If multiple tones/styles are present, place the strongest as `primary`, put others in `secondary` (tones only).
+11. Confidence: estimate model certainty. Example: 0.92.
+
+PROCESSING GUIDANCE:
+- Identify named entities (people, tools, brands, products, organizations) with canonical names.
+- Deduplicate across mentions (only unique values).
+- If the transcript references a product title in quotes or italics, include it in `products`.
+- For ambiguous short names (e.g., "Apple" could be brand or company), prefer the most likely category but keep it consistent.
+
+EXAMPLE (for pattern guidance only — follow the exact schema):
+Transcript:
+"In this interview with Tim Ferriss, we discuss productivity tools. He recommends using Notion for organization and mentions his book 'The 4-Hour Workweek'. We also touch on controversial topics around work-life balance and mental health strategies."
+
+Correct output (single JSON object):
+{{
+  "entities": {{
+    "people": ["Tim Ferriss"],
+    "tools": ["Notion"],
     "brands": [],
-    "products": [],
+    "products": ["The 4-Hour Workweek"],
     "organizations": []
   }},
   "tone": {{
-    "primary": "",
-    "secondary": [],
-    "confidence": 0.0
+    "primary": "conversational",
+    "secondary": ["educational"],
+    "confidence": 0.88
   }},
   "style": {{
-    "primary": "",
-    "confidence": 0.0
+    "primary": "interview",
+    "confidence": 0.92
   }},
   "safety_flags": {{
-    "sensitive_domains": [],
-    "severity": "",
+    "sensitive_domains": ["mental health"],
+    "severity": "low",
     "requires_review": false
   }}
 }}
@@ -179,7 +236,6 @@ Return STRICT JSON ONLY.
 Transcript:
 {transcript}
 """
-
 
 def analyze_with_gemini(transcript: str) -> Dict[str, Any]:
     if genai is None or not GEMINI_API_KEY:

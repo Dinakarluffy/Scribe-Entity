@@ -1,0 +1,36 @@
+{
+  "analysis_id": "7be7979b-e93d-459e-abd8-371d038bd3bb",
+  "transcript_id": "dbf69b0b-e632-4530-8a1a-59f0714a078e",
+  "creator_id": "8ee4ffbe-5c44-4182-84e4-971782aefdc7",
+  "entities": {
+    "people": [],
+    "tools": [
+      "notion"
+    ],
+    "brands": [],
+    "products": [],
+    "organizations": [
+      "Harvard"
+    ]
+  },
+  "tone": {
+    "primary": "informative",
+    "secondary": [
+      "advisory",
+      "supportive",
+      "cautious"
+    ],
+    "confidence": 0.9
+  },
+  "style": {
+    "primary": "professional",
+    "confidence": 0.9
+  },
+  "safety_flags": {
+    "sensitive_domains": [],
+    "severity": "",
+    "requires_review": false
+  },
+  "created_at": "2026-01-26T06:49:49.571539Z",
+  "status": "success"
+}

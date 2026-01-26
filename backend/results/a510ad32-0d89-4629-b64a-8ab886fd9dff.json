@@ -1,0 +1,37 @@
+{
+  "analysis_id": "a510ad32-0d89-4629-b64a-8ab886fd9dff",
+  "transcript_id": "dee31dfd-5b87-4392-ac64-dce5baaf15e3",
+  "creator_id": "a903dce0-1862-4f81-9047-67980a7f72da",
+  "entities": {
+    "people": [
+      "Tim Ferriss"
+    ],
+    "tools": [
+      "Notion"
+    ],
+    "brands": [],
+    "products": [
+      "The 4-Hour Workweek"
+    ],
+    "organizations": []
+  },
+  "tone": {
+    "primary": "Informative",
+    "secondary": [
+      "Advisory",
+      "Analytical"
+    ],
+    "confidence": 0.9
+  },
+  "style": {
+    "primary": "Factual",
+    "confidence": 0.9
+  },
+  "safety_flags": {
+    "sensitive_domains": [],
+    "severity": "",
+    "requires_review": false
+  },
+  "created_at": "2026-01-26T06:03:53.192826Z",
+  "status": "success"
+}

@@ -1,0 +1,37 @@
+{
+  "analysis_id": "5be861e9-0a0c-4797-b630-55f2daaf6db6",
+  "transcript_id": "b81fc142-e440-4cea-a0f8-42369a37464a",
+  "creator_id": "cd7dfbc3-d867-4c92-8585-8c22c1169461",
+  "entities": {
+    "people": [],
+    "tools": [
+      "financial planning",
+      "technology investments"
+    ],
+    "brands": [
+      "Apple",
+      "Microsoft"
+    ],
+    "products": [],
+    "organizations": []
+  },
+  "tone": {
+    "primary": "informational",
+    "secondary": [
+      "objective",
+      "educational"
+    ],
+    "confidence": 0.95
+  },
+  "style": {
+    "primary": "explanatory",
+    "confidence": 0.95
+  },
+  "safety_flags": {
+    "sensitive_domains": [],
+    "severity": "",
+    "requires_review": false
+  },
+  "created_at": "2026-01-26T07:05:33.772482Z",
+  "status": "success"
+}
