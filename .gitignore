@@ -58,3 +58,32 @@ venv/
 .venv/
 env/
 ENV/
+
+# =========================
+# Runtime / Generated files
+# =========================
+
+# Backend temp uploads
+backend/tmp/
+backend/tmp/uploads/
+
+# Backend analysis results (optional but recommended)
+backend/results/
+
+# Python worker generated results
+Python-Worker/results/
+
+# =========================
+# Python
+# =========================
+Python-Worker/venv/
+Python-Worker/__pycache__/
+Python-Worker/*.pyc
+
+# =========================
+# OS / Editor
+# =========================
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
