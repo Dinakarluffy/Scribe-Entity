@@ -151,23 +151,28 @@ func UploadAndProcessFile(w http.ResponseWriter, r *http.Request) {
 	out.Close()
 
 	workerRel := os.Getenv("PYTHON_WORKER_PATH")
-if workerRel == "" {
-	os.Remove(filePath)
-	http.Error(w, "PYTHON_WORKER_PATH env variable not set", http.StatusInternalServerError)
-	return
-}
+	if workerRel == "" {
+		os.Remove(filePath)
+		http.Error(w, "PYTHON_WORKER_PATH env variable not set", http.StatusInternalServerError)
+		return
+	}
 
-// 🔑 BUILD ABSOLUTE PATH
-pythonScript := filepath.Join(config.ProjectRoot, workerRel)
+	// 🔑 BUILD ABSOLUTE PATH
+	pythonScript := filepath.Join(config.ProjectRoot, workerRel)
 
-log.Println("Resolved Python worker path:", pythonScript)
+	log.Println("Resolved Python worker path:", pythonScript)
 
 
 	pythonExec := os.Getenv("PYTHON_EXEC")
-	if pythonExec == "" {
-		pythonExec = "python"
-	}
 
+	if pythonExec == "" {
+		// Try python3 first (macOS / Linux)
+		if _, err := exec.LookPath("python3"); err == nil {
+			pythonExec = "python3"
+		} else {
+			pythonExec = "python" // fallback (Windows)
+		}
+	}
 	cmd := exec.Command(
 		pythonExec,
 		pythonScript,
