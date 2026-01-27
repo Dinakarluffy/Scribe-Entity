@@ -5,24 +5,17 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/joho/godotenv"
-
 	"your_project/config"
 	"your_project/repository"
 	"your_project/routes"
 )
 
 func main() {
-	// 🔴 MUST BE FIRST: load .env
-	if err := godotenv.Load(); err != nil {
-		log.Println("No .env file found, relying on system environment variables")
-	}
-
-	// 🔍 Debug log (keep for now)
-	log.Println("PYTHON_WORKER_PATH =", os.Getenv("PYTHON_WORKER_PATH"))
-
-	// Load config AFTER env is loaded
+	// Load config (this also loads .env internally)
 	cfg := config.Load()
+
+	// Debug (now this WILL work)
+	log.Println("PYTHON_WORKER_PATH =", os.Getenv("PYTHON_WORKER_PATH"))
 
 	// Init DB
 	db := config.InitDB(cfg)

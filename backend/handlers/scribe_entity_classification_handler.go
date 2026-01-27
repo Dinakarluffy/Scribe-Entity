@@ -12,7 +12,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
-
+	"your_project/config" 
 	"your_project/repository"
 )
 
@@ -150,12 +150,18 @@ func UploadAndProcessFile(w http.ResponseWriter, r *http.Request) {
 	}
 	out.Close()
 
-	pythonScript := os.Getenv("PYTHON_WORKER_PATH")
-	if pythonScript == "" {
-		os.Remove(filePath)
-		http.Error(w, "PYTHON_WORKER_PATH env variable not set", http.StatusInternalServerError)
-		return
-	}
+	workerRel := os.Getenv("PYTHON_WORKER_PATH")
+if workerRel == "" {
+	os.Remove(filePath)
+	http.Error(w, "PYTHON_WORKER_PATH env variable not set", http.StatusInternalServerError)
+	return
+}
+
+// 🔑 BUILD ABSOLUTE PATH
+pythonScript := filepath.Join(config.ProjectRoot, workerRel)
+
+log.Println("Resolved Python worker path:", pythonScript)
+
 
 	pythonExec := os.Getenv("PYTHON_EXEC")
 	if pythonExec == "" {
