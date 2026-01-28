@@ -54,13 +54,37 @@ Create a `.env` file in the **project root**:
 
 ```
 PORT=8080
-DB_HOST=database-1.xxxxx.ap-southeast-1.rds.amazonaws.com
+GEMINI_API_KEY=your_real_gemini_api_key_here
+GEMINI_MODEL=gemini-2.5-flash
+
+# Backend (base URL or full endpoint)
+BACKEND_URL=https://your-backend.example.com      # or https://host/api/entity-classification/analyze
+BACKEND_API_KEY=optional_backend_bearer_token
+
+
+DB_HOST=localhost
 DB_PORT=5432
-DB_USER=dinakaran_dev
-DB_PASSWORD=your_password
-DB_NAME=incubrix
-DB_TABLE=scribe_entity_classification_dev
-DB_SSLMODE=require
+DB_USER=postgres
+DB_PASSWORD=your_password_here
+DB_NAME=entity_classification
+DB_TABLE=tabel_name
+DB_SSLMODE=disable
+
+
+# Misc
+RESULTS_DIR=results
+MAX_CHUNK_CHARS=16000
+
+PYTHON_WORKER_PATH=./Python-Worker/main.py
+# Python executable (Windows-safe)
+PYTHON_EXEC=python
+# macOS / Linux: python3
+PYTHON_EXEC=python3
+
+
+
+
+
 ```
 
 > The same `.env` file is used by **Go backend** and **Python worker**.
